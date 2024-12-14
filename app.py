@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
-from config import User
+from config import User, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from peewee import IntegrityError
 
@@ -30,8 +30,6 @@ def register():
         # データの検証 未入力
         if not request.form["name"] or not request.form["password"] or not request.form["email"]:
             flash("未入力あり")
-            flash("namaenasi")
-            flash("3kaime")
             return redirect(request.url)
         # 重複 名前
         if User.select().where(User.name == request.form["name"]):
@@ -97,8 +95,11 @@ def unregister():
     return redirect(url_for("index"))
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
+    if request.method == "POST" and current_user.is_authenticated:
+        Message.create(user=current_user, content=request.form["content"])
+
     return render_template("index.html")
 
 
