@@ -20,7 +20,7 @@ def load_user(user_id):
 @login_manager.unauthorized_handler
 def unauthorized_handler():
     # return redirect("/login")
-    return redirect(url_for("/login"))
+    return redirect(url_for("login"))
 
 
 # ユーザー登録フォームの表示
@@ -83,10 +83,6 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
-    # ログインしていない場合の処理
-    # if not current_user.is_authenticated:
-    #     return "ログインしていません"
-
     logout_user()
     flash("ログアウトしました！")
     return redirect(url_for("index"))
