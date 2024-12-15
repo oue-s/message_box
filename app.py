@@ -95,12 +95,51 @@ def unregister():
     return redirect(url_for("index"))
 
 
+# メッセージ登録フォームの表示・投稿・一覧表示
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST" and current_user.is_authenticated:
         Message.create(user=current_user, content=request.form["content"])
 
-    return render_template("index.html")
+    messages = (
+        Message.select()
+        .where(Message.reply_to.is_null(True))
+        .order_by(Message.pub_date.desc(), Message.id.desc())
+    )
+    return render_template("index.html", messages=messages)
+
+
+# メッセージ削除
+@app.route("/messages/<message_id>/delete/", methods=["POST"])
+@login_required
+def delete(message_id):
+    if Message.select().where((Message.id == message_id) & (Message.user == current_user)).first():
+        Message.delete_by_id(message_id)
+    else:
+        flash("無効な操作です")
+    return redirect(request.referrer)
+
+
+# 返信表示
+@app.route("/messages/<message_id>/")
+def show(message_id):
+    messages = (
+        Message.select()
+        .where((Message.id == message_id) | (Message.reply_to == message_id))
+        .order_by(Message.pub_date.desc())
+    )
+    if messages.count() == 0:
+        return redirect(url_for("index"))
+
+    return render_template("show.html", messages=messages, message_id=message_id)
+
+
+# 返信登録
+@app.route("/messages/<message_id>/", methods=["POST"])
+@login_required
+def reply(message_id):
+    Message.create(user=current_user, content=request.form["content"], reply_to=message_id)
+    return redirect(url_for("show", message_id=message_id))
 
 
 if __name__ == "__main__":
